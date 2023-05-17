@@ -29,6 +29,7 @@ void lsh_uname(char **args);
 void lsh_symlink(char **args);
 void lsh_rm(char **args);
 void lsh_cat(char **args);
+void lsh_chmod(char **args);
 
 #define HISTORY_SIZE 10
 
@@ -59,7 +60,11 @@ struct builtin builtins[] = {
     {"symlink", lsh_symlink},
     {"rm", lsh_rm},
     {"cat", lsh_cat},
+    {"chmod", lsh_chmod},
 };
+
+ #include <sys/utsname.h>
+#include <stdio.h>
 
 void lsh_uname(char **args) {
     struct utsname sys_info;
@@ -68,12 +73,15 @@ void lsh_uname(char **args) {
         return;
     }
 
-    printf("System Name: %s\n", sys_info.sysname);
-    printf("Node Name: %s\n", sys_info.nodename);
-    printf("Release: %s\n", sys_info.release);
-    printf("Version: %s\n", sys_info.version);
-    printf("Machine: %s\n", sys_info.machine);
+    printf("System Information:\n");
+    printf("  System Name:     %s\n", sys_info.sysname);
+    printf("  Node Name:      %s\n", sys_info.nodename);
+    printf("  Release:        %s\n", sys_info.release);
+    printf("  Version:        %s\n", sys_info.version);
+    printf("  Machine:        %s\n", sys_info.machine);
+    printf("  Domain Name:     %s\n", sys_info.__domainname);
 }
+
 
 void lsh_rm(char **args) {
     if (args[1] == NULL) {
@@ -357,11 +365,34 @@ void lsh_history(char **args) {
     }
 }
 
+#include <sys/stat.h>
+#include <stdio.h>
+
+void lsh_chmod(char **args) {
+    if (args[1] == NULL || args[2] == NULL) {
+        fprintf(stderr, "lsh: chmod: missing arguments\n");
+        return;
+    }
+
+    char *mode_str = args[1];
+    char *path = args[2];
+
+    // Parse the mode string into an integer
+    mode_t mode = strtol(mode_str, NULL, 8);
+
+    // Use the chmod system call to change the permissions of the file
+    if (chmod(path, mode) == -1) {
+        perror("lsh: chmod");
+        return;
+    }
+
+    printf("Permissions changed for %s\n", path);
+}
 
 
 int main() {
     while (true) {
-        printf("> ");
+        printf("lsh_shell@aimless > ");
         char *line = lsh_read_line();
         char **tokens = lsh_split_line(line);
 

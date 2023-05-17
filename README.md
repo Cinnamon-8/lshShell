@@ -17,3 +17,4 @@
        15.rm
        16.symlink
        17.cat
+       18.chmod
